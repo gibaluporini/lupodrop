@@ -533,7 +533,6 @@ def checkout():
         itens_detalhados.append({'peca': peca, 'quantidade': qtd, 'subtotal': subtotal})
 
     total = sum(i['subtotal'] for i in itens_detalhados)
-
     boleto_url = None
 
     if request.method == 'POST':
@@ -570,31 +569,49 @@ def checkout():
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json"
         }
-        pagamento_payload = {
-    "transaction_amount": total,
-    "description": f"Pedido #{novo.id} - LupoDrop",
-    "payment_method_id": "bolbradesco",
-    "payer": {
-    "email": current_user.email,
-    "first_name": current_user.nome.split()[0],
-    "last_name": current_user.nome.split()[-1] if len(current_user.nome.split()) > 1 else "Lupo",
-    "identification": {
-        "type": "CPF",
-        "number": "12345678909"
-    },
-    "address": {
-        "zip_code": endereco.get("cep", "00000000"),
-        "street_name": endereco.get("rua", "Rua Exemplo"),
-        "street_number": endereco.get("numero", "123"),
-        "neighborhood": endereco.get("bairro", "Centro"),
-        "city": endereco.get("cidade", "São Paulo"),
-        "federal_unit": endereco.get("uf", "SP")
-    }
-},
-    "notification_url": os.getenv("MP_WEBHOOK_URL"),
-    "external_reference": str(novo.id)
-}
 
+        # 🔧 Monta os itens
+        items_mercado_pago = []
+        for item in itens_detalhados:
+            if item['peca'].nome and item['peca'].preco and item['quantidade'] > 0:
+                items_mercado_pago.append({
+                    "title": item['peca'].nome,
+                    "quantity": item['quantidade'],
+                    "unit_price": float(item['peca'].preco),
+                    "currency_id": "BRL"
+                })
+
+        print("🔧 DEBUG Mercado Pago - Itens:")
+        for i in items_mercado_pago:
+            print(i)
+
+        pagamento_payload = {
+            "transaction_amount": total,
+            "description": f"Pedido #{novo.id} - LupoDrop",
+            "payment_method_id": "bolbradesco",
+            "payer": {
+                "email": current_user.email,
+                "first_name": current_user.nome.split()[0],
+                "last_name": current_user.nome.split()[-1] if len(current_user.nome.split()) > 1 else "Lupo",
+                "identification": {
+                    "type": "CPF",
+                    "number": "12345678909"
+                },
+                "address": {
+                    "zip_code": endereco.get("cep", "00000000"),
+                    "street_name": endereco.get("rua", "Rua Exemplo"),
+                    "street_number": endereco.get("numero", "123"),
+                    "neighborhood": endereco.get("bairro", "Centro"),
+                    "city": endereco.get("cidade", "São Paulo"),
+                    "federal_unit": endereco.get("uf", "SP")
+                }
+            },
+            "notification_url": os.getenv("MP_WEBHOOK_URL"),
+            "external_reference": str(novo.id),
+            "additional_info": {
+                "items": items_mercado_pago
+            }
+        }
 
         response = requests.post("https://api.mercadopago.com/v1/payments", headers=headers, json=pagamento_payload)
         print("🔎 Mercado Pago Response:", response.text)
@@ -605,8 +622,6 @@ def checkout():
         if response.status_code == 201:
             boleto_url = result.get("transaction_details", {}).get("external_resource_url")
             payment_id = result.get("id")
-
-            # Salvar payment_id no pedido (adicione essa coluna se ainda não tiver)
             novo.pagamento_id = payment_id
         else:
             flash("Erro ao gerar boleto. Tente novamente mais tarde.", "danger")
@@ -617,22 +632,23 @@ def checkout():
         session.pop('pedido_multiplo', None)
 
         return render_template(
-    "checkout.html",
-    itens=itens_detalhados,
-    total=total,
-    endereco=endereco,
-    boleto_url=boleto_url,
-    pedido_id=novo.id if request.method == 'POST' else None
-)
+            "checkout.html",
+            itens=itens_detalhados,
+            total=total,
+            endereco=endereco,
+            boleto_url=boleto_url,
+            pedido_id=novo.id
+        )
 
     return render_template(
-    "checkout.html",
-    itens=itens_detalhados,
-    total=total,
-    endereco=endereco,
-    boleto_url=boleto_url,
-    pedido_id=None
-)
+        "checkout.html",
+        itens=itens_detalhados,
+        total=total,
+        endereco=endereco,
+        boleto_url=boleto_url,
+        pedido_id=None
+    )
+
 
 @app.route('/verificar_pagamento/<int:pedido_id>', methods=['POST'])
 @login_required
