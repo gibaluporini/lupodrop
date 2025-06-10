@@ -1,0 +1,412 @@
+<!-- catalogo.html corrigido -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Catálogo | LupoDrop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .logo-img { height: 120px; }
+    .btn-sm + .btn-sm { margin-left: 8px; }
+    #botaoProsseguir {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+      background-image: none;
+      width: 2rem;
+      height: 2rem;
+    }
+    .carousel-control-prev-icon::after,
+    .carousel-control-next-icon::after {
+      content: '';
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: solid black;
+      border-width: 0 3px 3px 0;
+      padding: 6px;
+    }
+    .carousel-control-prev-icon::after { transform: rotate(135deg); }
+    .carousel-control-next-icon::after { transform: rotate(-45deg); }
+  </style>
+  <script>
+    const tipoProduto = "{{ tipo_produto }}";
+    const urlPedidoMultiplo = "{{ url_for('pedido_multiplo_endereco') }}";
+  </script>
+</head>
+<body class="bg-light">
+<div class="container mt-3">
+
+<!-- TOPO COMPLETO -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <img src="{{ url_for('static', filename='logo01.png') }}" alt="Logo" class="logo-img">
+  </div>
+  <div class="text-end">
+    <a href="{{ url_for('logout') }}" class="btn btn-outline-dark btn-sm">Sair</a>
+    <p class="mt-2 mb-0 small">
+      🔐 Logado como: <strong>{{ current_user.tipo }}</strong><br>
+      📧 <strong>{{ current_user.email }}</strong>
+    </p>
+  </div>
+</div>
+
+<!-- TOPO SECUNDÁRIO -->
+<div class="row align-items-center mb-4">
+  <div class="col-auto">
+    <a href="{{ url_for('categorias') }}" class="btn btn-outline-secondary btn-sm">&larr; Voltar para Categorias</a>
+  </div>
+  <div class="col text-center">
+    <h4 class="mb-0">
+      Catálogo:
+      {% if tipo_produto == 'autopeca' %}🔧 Autopeças
+      {% elif tipo_produto == 'cosmetico' %}🔴 Cosméticos
+      {% elif tipo_produto == 'moda' %}👗 Moda
+      {% elif tipo_produto == 'eletronico' %}💻 Eletrônicos
+      {% else %}📦 Outros
+      {% endif %}
+    </h4>
+  </div>
+  <div class="col-auto d-flex justify-content-end gap-2 flex-wrap">
+    {% if current_user.tipo == 'admin' %}
+      {% if tipo_produto == 'autopeca' %}
+        <a href="{{ url_for('formulario_autopeca') }}" class="btn btn-success btn-sm">➕ Adicionar Peça</a>
+        <a href="{{ url_for('importar_planilha_autopeca') }}" class="btn btn-outline-success btn-sm">🗓️ Importar Planilha</a>
+      {% else %}
+        <a href="{{ url_for('formulario_generico', tipo_produto=tipo_produto) }}" class="btn btn-success btn-sm">➕ Adicionar Item</a>
+      {% endif %}
+    {% endif %}
+    <a href="{{ url_for('pedidos') }}" class="btn btn-outline-info btn-sm">📦 Ver Pedidos</a>
+  </div>
+</div>
+
+<!-- BUSCA -->
+<div class="row mb-4">
+  <div class="col-md-8 offset-md-2">
+    <div class="input-group shadow-sm">
+      <span class="input-group-text bg-white border-end-0">🔍</span>
+      <input type="text" id="busca" class="form-control border-start-0" placeholder="Buscar por nome ou código...">
+    </div>
+  </div>
+</div>
+
+<!-- AVISO -->
+<div id="avisoMultiplo" class="alert alert-warning py-2 small d-none text-center" role="alert">
+  ⚠️ Só é possível fazer pedidos de um mesmo fornecedor.
+</div>
+
+{% if current_user.tipo == 'lojista' %}
+  <div class="text-center mb-3">
+    <button id="botaoMultiplo" class="btn btn-warning btn-sm" onclick="alternarCompraMultipla()">🛒 Fazer Pedido</button>
+  </div>
+{% endif %}
+
+<!-- CARDS -->
+{% if catalogo %}
+  <div class="row" id="catalogo-cards">
+    {% for item in catalogo %}
+      <div class="col-6 col-md-4 col-xl-2 mb-4">
+        <div class="card h-100 shadow-sm d-flex flex-column" data-fornecedor="{{ item.fornecedor|lower|replace(' ', '') }}">
+          {% set img_default = url_for('static', filename='sem-imagem.png') %}
+          {% set primeira_imagem = item.imagens.strip().split(',')[0] if item.imagens and item.imagens.strip() else '' %}
+          <img src="{{ primeira_imagem if primeira_imagem else img_default }}" class="card-img-top" alt="Imagem da peça" onerror="this.onerror=null; this.src='{{ img_default }}'">
+
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ item.nome }}</h5>
+            <p class="card-text mb-1"><strong>Código:</strong> {{ item.codigo }}</p>
+            <p class="card-text mb-1"><strong>Fornecedor:</strong> {{ item.fornecedor }}</p>
+            <p class="card-text mb-1"><strong>Preço:</strong> R$ {{ item.preco }}</p>
+
+            <div class="mt-auto">
+              {% if current_user.tipo == 'lojista' %}
+              <div class="form-group campo-qtd-container d-none mb-2">
+                <label class="form-label small mb-1">Qtd:</label>
+                <input type="number" name="quantidade_card_{{ item.id }}" class="form-control form-control-sm campo-qtd" data-fornecedor="{{ item.fornecedor|lower|replace(' ', '') }}" data-item-id="{{ item.id }}" min="0" disabled style="width: 70px;">
+              </div>
+              {% endif %}
+              <button class="btn btn-sm btn-outline-primary w-100 btn-detalhes" data-bs-toggle="modal" data-bs-target="#modalItem{{ item.id }}">
+                🔍 Ver Detalhes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL -->
+      <div class="modal fade" id="modalItem{{ item.id }}" tabindex="-1" aria-labelledby="modalItemLabel{{ item.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalItemLabel{{ item.id }}">{{ item.nome }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-6">
+                  {% set lista_imagens = item.imagens.split(',') if item.imagens else [] %}
+                  {% if lista_imagens %}
+                    <div id="carousel{{ item.id }}" class="carousel slide mb-3" data-bs-ride="false">
+                      <div class="carousel-inner">
+                        {% for img in lista_imagens %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                          <img src="{{ img.strip() }}" class="d-block w-100" alt="Imagem da peça">
+                        </div>
+                        {% endfor %}
+                      </div>
+                      {% if lista_imagens|length > 1 %}
+                      <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ item.id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                      </button>
+                      <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ item.id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                      </button>
+                      {% endif %}
+                    </div>
+                    <div>
+                      {% for img in lista_imagens %}
+                        <a href="{{ img.strip() }}" class="btn btn-outline-secondary btn-sm mb-1" download target="_blank">⬇️ Baixar Imagem {{ loop.index }}</a><br>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <img src="{{ url_for('static', filename='sem-imagem.png') }}" class="img-fluid mb-2">
+                  {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                  <p><strong>Código:</strong> {{ item.codigo }}</p>
+                  <p><strong>Fornecedor:</strong> {{ item.fornecedor }}</p>
+                  <p><strong>Preço:</strong> R$ {{ item.preco }}</p>
+                  <p><strong>Marca:</strong> {{ item.marca }}</p>
+                  {% if tipo_produto == 'autopeca' %}
+  <p><strong>Montadora:</strong> {{ item.montadora }}</p>
+  <p><strong>Aplicações:</strong><br>
+    <span style="white-space: pre-wrap; word-break: break-word;">{{ item.aplicacoes }}</span>
+  </p>
+  <p><strong>Categoria:</strong> {{ item.categoria }}</p>
+{% else %}
+  <p><strong>Descrição:</strong> {{ item.descricao }}</p>
+{% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              {% if current_user.tipo == 'admin' %}
+                <a href="{{ url_for('editar_item', tipo=tipo_produto, item_id=item.id) }}" class="btn btn-warning btn-sm">Editar</a>
+                <form method="POST" action="{% if tipo_produto == 'autopeca' %}/excluir/{{ item.id }}{% else %}/excluir-generico/{{ item.id }}{% endif %}" style="display:inline;">
+                  <button class="btn btn-danger btn-sm ms-1" onclick="return confirm('Tem certeza?')">Excluir</button>
+                </form>
+              {% endif %}
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-warning text-center mt-4">
+    ⚠️ Nenhum produto encontrado nesta categoria.
+  </div>
+{% endif %}
+
+<!-- Corrigido: botão "Ver Detalhes" visível quando não está em modo múltiplo -->
+
+<script>
+let modoMultiplo = false;
+let fornecedorSelecionado = null;
+let quantidadesSalvas = {};  // id -> quantidade
+
+function alternarCompraMultipla() {
+  modoMultiplo = !modoMultiplo;
+  const botao = document.getElementById("botaoMultiplo");
+  const aviso = document.getElementById("avisoMultiplo");
+
+  if (modoMultiplo) {
+    botao.innerHTML = "❌ Cancelar";
+    botao.classList.remove("btn-warning");
+    botao.classList.add("btn-outline-danger");
+    aviso.classList.remove("d-none");
+
+    exibirCamposQuantidade();
+    inserirBotaoProsseguir();
+    aplicarRestricaoFornecedor();
+  } else {
+    modoMultiplo = false;
+    fornecedorSelecionado = null;
+    quantidadesSalvas = {};
+
+    botao.innerHTML = "🛒 Fazer Pedido";
+    botao.classList.add("btn-warning");
+    botao.classList.remove("btn-outline-danger");
+    aviso.classList.add("d-none");
+
+    esconderCamposQuantidade();
+    removerBotaoProsseguir();
+  }
+}
+
+function exibirCamposQuantidade() {
+  document.querySelectorAll('.campo-qtd-container').forEach(div => div.classList.remove("d-none"));
+  document.querySelectorAll('.campo-qtd').forEach(input => {
+    input.disabled = false;
+    input.value = quantidadesSalvas[input.dataset.itemId] || '';
+  });
+}
+
+function esconderCamposQuantidade() {
+  document.querySelectorAll('.campo-qtd-container').forEach(div => div.classList.add("d-none"));
+  document.querySelectorAll('.campo-qtd').forEach(input => {
+    input.disabled = true;
+    input.value = '';
+  });
+}
+
+function aplicarRestricaoFornecedor() {
+  const inputs = document.querySelectorAll('.campo-qtd');
+  inputs.forEach(input => {
+    input.addEventListener('input', function () {
+      const card = input.closest('.card');
+      const fornecedor = normalizar(card.getAttribute('data-fornecedor'));
+      const id = input.dataset.itemId;
+
+      quantidadesSalvas[id] = input.value;
+
+      if (input.value && !fornecedorSelecionado) {
+        fornecedorSelecionado = fornecedor;
+        bloquearOutrosFornecedores();
+        atualizarAvisoFornecedor();
+      }
+
+      if (!input.value && normalizar(fornecedor) === fornecedorSelecionado) {
+        const aindaTem = Array.from(inputs).some(
+          i => i !== input &&
+          normalizar(i.closest('.card').getAttribute('data-fornecedor')) === fornecedorSelecionado &&
+          i.value
+        );
+        if (!aindaTem) {
+          fornecedorSelecionado = null;
+          desbloquearTodosFornecedores();
+          atualizarAvisoFornecedor();
+        }
+      }
+
+      verificarQuantidades();
+    });
+  });
+}
+
+function bloquearOutrosFornecedores() {
+  document.querySelectorAll('.campo-qtd').forEach(input => {
+    const fornecedor = normalizar(input.closest('.card').getAttribute('data-fornecedor'));
+    if (fornecedor !== fornecedorSelecionado) {
+      input.disabled = true;
+    }
+  });
+}
+
+function desbloquearTodosFornecedores() {
+  document.querySelectorAll('.campo-qtd').forEach(input => input.disabled = false);
+}
+
+function atualizarAvisoFornecedor() {
+  const aviso = document.getElementById("avisoMultiplo");
+  if (fornecedorSelecionado) {
+    aviso.innerHTML = `⚠️ Apenas peças do fornecedor <strong>${fornecedorSelecionado.charAt(0).toUpperCase() + fornecedorSelecionado.slice(1)}</strong> estão liberadas.`;
+  } else {
+    aviso.innerHTML = `⚠️ Só é possível fazer pedidos de um mesmo fornecedor.`;
+  }
+}
+
+function verificarQuantidades() {
+  const ativo = Object.values(quantidadesSalvas).some(q => parseInt(q) > 0);
+  const btn = document.getElementById("botaoProsseguir");
+  if (btn) btn.disabled = !ativo;
+}
+
+function inserirBotaoProsseguir() {
+  if (!document.getElementById("botaoProsseguir")) {
+    const btn = document.createElement("button");
+    btn.id = "botaoProsseguir";
+    btn.className = "btn btn-success mt-3";
+    btn.disabled = true;
+    btn.innerHTML = "📍 Prosseguir para Endereço";
+    btn.onclick = enviarPedidoMultiplo;
+    document.getElementById("catalogo-cards").after(btn);
+  }
+}
+
+function removerBotaoProsseguir() {
+  const btn = document.getElementById("botaoProsseguir");
+  if (btn) btn.remove();
+}
+
+function normalizar(texto) {
+  return (texto || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+}
+
+function enviarPedidoMultiplo() {
+  const pedido = Object.entries(quantidadesSalvas)
+    .filter(([_, qtd]) => parseInt(qtd) > 0)
+    .map(([id, qtd]) => ({ id, quantidade: qtd }));
+
+  fetch(urlPedidoMultiplo, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tipo_produto: tipoProduto, itens: pedido })
+  }).then(res => res.json())
+    .then(data => {
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        alert(data.erro || "Erro ao processar pedido.");
+      }
+    }).catch(err => {
+      alert("Erro ao enviar pedido.");
+    });
+}
+
+document.addEventListener("input", function (e) {
+  if (e.target.classList.contains("campo-qtd")) {
+    const id = e.target.dataset.itemId;
+    quantidadesSalvas[id] = e.target.value;
+  }
+});
+</script>
+
+
+<script>
+function executarBusca() {
+  const termo = document.getElementById("busca").value.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  const cards = document.querySelectorAll('#catalogo-cards .card');
+
+  cards.forEach(card => {
+    const nome = (card.querySelector('.card-title')?.textContent || '').toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+    const codigo = (card.querySelector('.card-text')?.textContent || '').toLowerCase();
+
+    if (nome.includes(termo) || codigo.includes(termo)) {
+      card.parentElement.classList.remove('d-none');
+    } else {
+      card.parentElement.classList.add('d-none');
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("busca")?.addEventListener("input", executarBusca);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.querySelectorAll('.carousel').forEach(carousel => {
+    new bootstrap.Carousel(carousel, {
+      interval: false,
+      ride: false
+    });
+  });
+</script>

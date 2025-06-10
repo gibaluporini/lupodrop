@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuários | LupoDrop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>👥 Usuários Cadastrados</h3>
+            <a href="/criar-usuario" class="btn btn-primary">➕ Novo Usuário</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="position-relative">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+
+        <table class="table table-bordered bg-white">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Tipo</th>
+                    <th>Categorias</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>{{ u.nome }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.tipo.capitalize() }}</td>
+                    <td>
+                        {% if u.tipo == 'fornecedor' and u.categorias_permitidas %}
+                            {% for cat in u.categorias_permitidas.split(',') %}
+                                <span class="badge bg-info text-dark me-1">{{ cat.capitalize() }}</span>
+                            {% endfor %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="text-nowrap">
+                        <a href="{{ url_for('editar_usuario', usuario_id=u.id) }}" class="btn btn-sm btn-outline-primary">Editar Senha</a>
+                        <form method="POST" action="{{ url_for('excluir_usuario', usuario_id=u.id) }}" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');">
+                            <button class="btn btn-sm btn-outline-danger ms-1">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <a href="/" class="btn btn-secondary mt-3">← Voltar</a>
+    </div>
+</body>
+</html>
+

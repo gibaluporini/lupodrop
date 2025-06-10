@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Item | LupoDrop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h3>✏️ Editar {{ tipo|capitalize }}</h3>
+
+    <form method="POST" class="bg-white p-4 rounded shadow-sm mt-3">
+        <div class="row">
+            <!-- Campos comuns -->
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nome</label>
+                <input type="text" name="nome" class="form-control" value="{{ item.nome }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Código</label>
+                <input type="text" name="codigo" class="form-control" value="{{ item.codigo }}">
+            </div>
+
+            {% if tipo == 'autopeca' %}
+<!-- Campos específicos de autopeças -->
+<div class="col-md-12 mb-3">
+  <label class="form-label">Aplicações</label>
+  <textarea name="aplicacoes" class="form-control" rows="6">{{ item.aplicacoes }}</textarea>
+</div>
+<div class="col-md-6 mb-3">
+  <label class="form-label">Montadora</label>
+  <input type="text" name="montadora" class="form-control" value="{{ item.montadora }}">
+</div>
+{% endif %}
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Fornecedor</label>
+                <input type="text" name="fornecedor" class="form-control" value="{{ item.fornecedor }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Preço</label>
+                <input type="text" name="preco" class="form-control" value="{{ item.preco }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Marca</label>
+                <input type="text" name="marca" class="form-control" value="{{ item.marca }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Categoria</label>
+                <input type="text" name="categoria" class="form-control" value="{{ item.categoria }}">
+            </div>
+            <div class="col-md-12 mb-3">
+    <label class="form-label">Links das Imagens (separados por vírgula)</label>
+    <textarea name="imagens" class="form-control" rows="3">{{ item.imagens }}</textarea>
+</div>
+
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('catalogo_por_tipo', tipo_produto=tipo) }}" class="btn btn-secondary">← Cancelar</a>
+            <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>
+
+
+

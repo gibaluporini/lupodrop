@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Usuário</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-4">
+    <h3>🔑 Editar Senha do Usuário</h3>
+    <form method="POST">
+        <div class="mb-3">
+            <label class="form-label">Usuário: {{ usuario.nome }} ({{ usuario.email }})</label>
+        </div>
+        <div class="mb-3">
+            <label for="nova_senha" class="form-label">Nova Senha</label>
+            <input type="password" name="nova_senha" id="nova_senha" class="form-control" required>
+        </div>
+
+        {% if usuario.tipo == 'fornecedor' %}
+        <div class="mb-3">
+            <label class="form-label">Categorias Permitidas</label><br>
+            {% for cat in categorias_disponiveis %}
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="categorias" value="{{ cat }}"
+                    {% if cat in usuario.categorias_permitidas.split(',') %}checked{% endif %}>
+                <label class="form-check-label text-capitalize">{{ cat }}</label>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{{ url_for('usuarios') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+</body>
+</html>
+
+

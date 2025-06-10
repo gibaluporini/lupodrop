@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmar Pagamento | LupoDrop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-4">
+  <h3 class="mb-4">💳 Confirmar Pagamento</h3>
+
+  {% if itens %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Resumo do Pedido</h5>
+        <ul class="list-group list-group-flush">
+          {% for item in itens %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ item.peca.nome }}</strong><br>
+                Código: {{ item.peca.codigo }}<br>
+                Quantidade: {{ item.quantidade }}
+              </div>
+              <span class="fw-bold">R$ {{ '%.2f' | format(item.subtotal) }}</span>
+            </li>
+          {% endfor %}
+          <li class="list-group-item d-flex justify-content-between">
+            <strong>Total:</strong>
+            <strong class="text-success">R$ {{ '%.2f' | format(total) }}</strong>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    {% if not boleto_url %}
+      <form method="POST" class="d-flex justify-content-between flex-wrap gap-2">
+        <a href="{{ url_for('pedido_multiplo_form') }}" class="btn btn-outline-secondary">← Voltar</a>
+        <button type="submit" class="btn btn-primary">💳 Confirmar Pagamento</button>
+        <a href="{{ url_for('cancelar_checkout') }}" class="btn btn-outline-danger">Cancelar Pedido</a>
+      </form>
+    {% else %}
+      <div class="alert alert-info mt-4">
+        <h5>✅ Seu boleto foi gerado com sucesso!</h5>
+        <a href="{{ boleto_url }}" target="_blank" class="btn btn-primary">📄 Baixar Boleto</a>
+
+        {% if pedido_id %}
+  <form method="POST" action="{{ url_for('verificar_pagamento', pedido_id=pedido_id) }}" class="d-inline-block mt-3">
+    <button type="submit" class="btn btn-success">✅ Já paguei – Ver meus pedidos</button>
+  </form>
+{% endif %}
+
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div class="alert alert-warning">Nenhum item encontrado para confirmação.</div>
+  {% endif %}
+
+</div>
+</body>
+</html>

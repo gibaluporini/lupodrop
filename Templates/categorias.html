@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Escolha um Nicho | LupoDrop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .categoria-card {
+            transition: transform 0.2s ease;
+            cursor: pointer;
+            border-radius: 16px;
+            min-height: 160px;
+        }
+        .categoria-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+        }
+        .categoria-icon {
+            font-size: 2.5rem;
+        }
+        .logo-img {
+            height: 100px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- TOPO -->
+<div class="container py-3 mb-4 d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-3">
+        <img src="{{ url_for('static', filename='logo01.png') }}" alt="Logo" class="logo-img">
+        {% if current_user.tipo == 'admin' %}
+            <div class="d-flex flex-column gap-2">
+                <a href="{{ url_for('usuarios') }}" class="btn btn-secondary btn-sm">👥 Ver Usuários</a>
+            </div>
+        {% endif %}
+    </div>
+    <div class="text-end">
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-dark">Sair</a>
+        <p class="mt-2 mb-0 small">
+            🔐 Logado como: <strong>{{ current_user.tipo }}</strong><br>
+            📧 <strong>{{ current_user.email }}</strong>
+        </p>
+    </div>
+</div>
+
+<!-- TÍTULO COM BOTÃO DE VER PEDIDOS -->
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">🌐 Selecione uma Categoria de Produtos</h2>
+        <a href="{{ url_for('pedidos') }}" class="btn btn-outline-primary btn-sm">📦 Ver Pedidos</a>
+    </div>
+
+    <div class="row justify-content-center">
+        {% for tipo in tipos %}
+            {% if current_user.tipo != 'fornecedor' or tipo.id in (current_user.categorias_permitidas or '').split(',') %}
+                <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                    <a href="{{ url_for('catalogo_por_tipo', tipo_produto=tipo.id) }}" class="text-decoration-none">
+                        <div class="card categoria-card shadow-sm text-center p-4">
+                            <div class="categoria-icon mb-3">
+                                {% if tipo.id == 'autopeca' %}🔧
+                                {% elif tipo.id == 'cosmetico' %}💄
+                                {% elif tipo.id == 'moda' %}👗
+                                {% elif tipo.id == 'eletronico' %}💻
+                                {% else %}📦
+                                {% endif %}
+                            </div>
+                            <h5 class="card-title text-dark">{{ tipo.nome }}</h5>
+                        </div>
+                    </a>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+</body>
+</html>
+
+
+
+

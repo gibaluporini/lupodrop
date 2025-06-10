@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Peça | LupoDrop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <img src="{{ url_for('static', filename='logo01.png') }}" alt="Logo" style="height: 60px;">
+        <div class="text-end">
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-dark">Sair</a>
+            <p class="mt-2 mb-0 small">🔐 Logado como: <strong>{{ current_user.tipo }}</strong></p>
+        </div>
+    </div>
+
+    <h4 class="mb-3">Cadastrar Nova Peça</h4>
+    <form method="POST">
+        <input type="hidden" name="tipo_produto" value="autopeca">
+        <div class="row g-3">
+            <div class="col-md-6">
+    <label class="form-label">Nome</label>
+    <input type="text" name="nome" class="form-control" required>
+</div>
+<div class="col-md-6">
+    <label class="form-label">Código</label>
+    <input type="text" name="codigo" class="form-control">
+</div>
+<div class="col-md-12">
+    <label class="form-label">Aplicações</label>
+    <textarea name="aplicacoes" class="form-control" rows="6"></textarea>
+</div>
+<div class="col-md-6">
+    <label class="form-label">Fornecedor</label>
+    <input type="text" name="fornecedor" class="form-control">
+</div>
+<div class="col-md-6">
+    <label class="form-label">Preço</label>
+    <input type="text" name="preco" class="form-control">
+</div>
+<div class="col-md-6">
+    <label class="form-label">Marca</label>
+    <input type="text" name="marca" class="form-control">
+</div>
+<div class="col-md-6">
+    <label class="form-label">Montadora</label>
+    <input type="text" name="montadora" class="form-control">
+</div>
+<div class="col-md-6">
+    <label class="form-label">Categoria</label>
+    <input type="text" name="categoria" class="form-control">
+</div>
+
+
+<!-- Campo adicional para múltiplas imagens -->
+<div class="col-md-12">
+    <label class="form-label">Imagens (URLs separadas por vírgula)</label>
+    <textarea name="imagens" class="form-control" rows="3" placeholder="https://img1.jpg, https://img2.jpg"></textarea>
+</div>
+
+        </div>
+        <div class="mt-4 d-flex justify-content-start gap-2">
+    <button type="submit" class="btn btn-success">Salvar</button>
+    <a href="{{ url_for('catalogo_por_tipo', tipo_produto='autopeca') }}" class="btn btn-outline-secondary">← Cancelar</a>
+</div>
+    </form>
+</div>
+</body>
+</html>
+
